@@ -1432,7 +1432,9 @@ coreMain(int argc, char *argv[]) {
 	setAgentsOptionsDefaults();
 	sanityCheckOptions();
 
+#if !BOOST_OS_MACOS
 	restoreOomScore(agentsOptions);
+#endif
 
 	ret = runCore();
 	shutdownAgent(agentsOptions);
