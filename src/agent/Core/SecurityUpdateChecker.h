@@ -37,6 +37,11 @@
 #if BOOST_OS_MACOS
 	#include <sys/syslimits.h>
 	#include <unistd.h>
+	#include <Availability.h>
+	#define PRE_HIGH_SIERRA __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_13
+	#if !PRE_HIGH_SIERRA
+		#include <openssl/err.h>
+	#endif
 #endif
 
 namespace Passenger {
@@ -51,11 +56,13 @@ using namespace oxt;
 #define MIN_CHECK_BACKOFF_SEC (12 * 60 * 60)
 #define MAX_CHECK_BACKOFF_SEC (7 * 24 * 60 * 60)
 
+#if PRE_HIGH_SIERRA
 // Password for the .p12 client certificate (because .p12 is required to be pwd protected on some
 // implementations). We're OK with hardcoding because the certs are not secret anyway, and they're not used
 // for client id/auth (just to easily deflect unrelated probes from the server endpoint).
 #define CLIENT_CERT_PWD "p6PBhK8KtorrhMxHnH855MvF"
 #define CLIENT_CERT_LABEL "Phusion Passenger Open Source"
+#endif
 
 #define POSSIBLE_MITM_RESOLUTION "(if this error persists check your connection security or try upgrading " SHORT_PROGRAM_NAME ")"
 
@@ -161,7 +168,7 @@ private:
 
 		logUpdateFail(error);
 
-#if !BOOST_OS_MACOS
+#if !(BOOST_OS_MACOS && PRE_HIGH_SIERRA)
 		unsigned long cryptoErrorCode = ERR_get_error();
 		if (cryptoErrorCode == 0) {
 			logUpdateFailAdditional("CURLcode" + to_string(code));
@@ -239,7 +246,7 @@ private:
 			return code;
 		}
 
-#if BOOST_OS_MACOS
+#if BOOST_OS_MACOS && PRE_HIGH_SIERRA
 		// preauth the security update check key in the user's keychain (this is for libcurl's benefit because they don't bother to authorize themselves to use the keys they import)
 		if (!crypto->preAuthKey(clientCertPath.c_str(), CLIENT_CERT_PWD, CLIENT_CERT_LABEL)) {
 			return CURLE_SSL_CERTPROBLEM;
@@ -309,7 +316,7 @@ public:
 		crypto = new Crypto();
 		updateCheckThread = NULL;
 		checkIntervalSec = 0;
-#if BOOST_OS_MACOS
+#if BOOST_OS_MACOS && PRE_HIGH_SIERRA
 		clientCertPath = locator.getResourcesDir() + "/update_check_client_cert.p12";
 #else
 		clientCertPath = locator.getResourcesDir() + "/update_check_client_cert.pem";
@@ -567,7 +574,7 @@ public:
 			}
 		} while (0);
 
-#if BOOST_OS_MACOS
+#if BOOST_OS_MACOS && PRE_HIGH_SIERRA
 		// remove the security update check key from the user's keychain so that if we are stopped/crash and are upgraded or reinstalled before restarting we don't have permission problems
 		crypto->killKey(CLIENT_CERT_LABEL);
 #endif
