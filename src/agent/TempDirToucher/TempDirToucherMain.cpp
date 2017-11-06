@@ -59,6 +59,7 @@ static bool verbose = false;
 static const char *pidFile = NULL;
 static const char *logFile = NULL;
 static uid_t uid = 0;
+static pid_t nginxPid = 0;
 static int sleepInterval = 1800;
 static int terminationPipe[2];
 static sig_atomic_t shouldIgnoreNextTermSignal = 0;
@@ -107,6 +108,13 @@ parseArguments(int argc, char *argv[], int offset) {
 				exit(1);
 			}
 			sleepInterval = atoi(argv[i + 1]);
+			i++;
+		} else if (strcmp(argv[i], "--nginx-pid") == 0) {
+			if (i == argc - 1) {
+				fprintf(stderr, ERROR_PREFIX ": --nginx-pid requires the nginx master process pid as an argument\n");
+				exit(1);
+			}
+			nginxPid = atoi(argv[i + 1]);
 			i++;
 		} else if (strcmp(argv[i], "--pid-file") == 0) {
 			pidFile = argv[i + 1];
@@ -450,6 +458,18 @@ performCleanup(const char *dir) {
 	}
 }
 
+void
+maybeWaitForNginxToExit(){
+	if (nginxPid == 0) {
+		return;
+	}
+	while (0 == kill(nginxPid, 0)) {
+		if (!doSleep(sleepInterval)) {
+			break;
+		}
+	}
+}
+
 int
 tempDirToucherMain(int argc, char *argv[]) {
 	initialize(argc, argv, 2);
@@ -474,6 +494,7 @@ tempDirToucherMain(int argc, char *argv[]) {
 
 	maybeDeletePidFile();
 	if (shouldCleanup) {
+		maybeWaitForNginxToExit();
 		DEBUG("Cleaning up directory");
 		performCleanup(dir);
 	}
