@@ -125,7 +125,7 @@ extern ServerConfig serverConfig;
 
 void *createDirConfig(apr_pool_t *p, char *dirspec);
 void *mergeDirConfig(apr_pool_t *p, void *basev, void *addv);
-void postprocessConfig(server_rec *s, apr_pool_t *pool);
+void postprocessConfig(server_rec *s, apr_pool_t *pool, apr_pool_t *temp_pool);
 
 
 

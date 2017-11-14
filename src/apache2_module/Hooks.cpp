@@ -1244,7 +1244,7 @@ public:
 	    : cstat(1024),
 	      watchdogLauncher(IM_APACHE)
 	{
-		postprocessConfig(s, pconf);
+		postprocessConfig(s, pconf, ptemp);
 
 		Json::Value loggingConfig;
 		loggingConfig["level"] = LoggingKit::Level(serverConfig.logLevel);
