@@ -60,7 +60,6 @@ init_config_manifest_generation(ngx_conf_t *cf, manifest_gen_ctx_t *ctx) {
 
 static void
 deinit_config_manifest_generation(manifest_gen_ctx_t *ctx) {
-    psg_json_value_free(ctx->manifest);
     psg_json_value_free(ctx->empty_object);
     psg_json_value_free(ctx->empty_array);
     psg_json_value_iterator_free(ctx->it);
